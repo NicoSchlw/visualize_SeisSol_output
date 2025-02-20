@@ -48,8 +48,8 @@ def plot_shakemaps():
 
     filename = args.filename
 
-    # activate to decrease the resolution and speed up the figure generation (useful when modifying/debugging)
-    #step = 10
+    # increase to decrease the resolution and speed up the figure generation (useful when modifying/debugging)
+    step = 1
 
     cmaps = ["OrRd", "YlOrRd", "Spectral_r", "turbo"]
     cbar_labels = ["PGD [m]", "PGV [m/s]", "PGA [m/s$^2$]"]
