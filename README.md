@@ -1,1 +1,1 @@
-# visualize_SeisSol_output
+This repository collects scripts to visualize SeisSol output from DT-GEO workflows.
