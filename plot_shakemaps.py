@@ -130,7 +130,7 @@ def plot_shakemaps():
         ax[i[0]].set_ylabel("y [km]", size=8)
 
     plt.savefig(
-        "shakemap.jpg",
+        "shakemaps.jpg",
         dpi=300,
         facecolor="white",
         transparent=False,
