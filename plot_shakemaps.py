@@ -40,17 +40,16 @@ def custom_terrain_cmap(z):
     max_value = np.round((np.min((np.max(z), 4500))), -2)
     step_size = np.round((max_value - min_value) / 13, -2)
     cbar_levels = np.arange(min_value, max_value, step_size)
-    if cbar_levels[0]<0.:
+    if cbar_levels[0] < 0.0:
         cbar_levels -= cbar_levels[np.argmin(np.abs(cbar_levels))]
-    cmap_min_index=np.max((50+int(cbar_levels[0]/20), 10))
-    #cmap_max_index=np.min((50+int(cbar_levels[-1]/23), 240))
-    cmap_max_index=np.min((50+int(180*np.sqrt(cbar_levels[-1]/4500)), 230))
+    cmap_min_index = np.max((50 + int(cbar_levels[0] / 20), 10))
+    # cmap_max_index=np.min((50+int(cbar_levels[-1]/23), 240))
+    cmap_max_index = np.min((50 + int(180 * np.sqrt(cbar_levels[-1] / 4500)), 230))
     cmap_new = mpl.cm.terrain(np.arange(256))[cmap_min_index:cmap_max_index]
     cmap_new = mpl.colors.ListedColormap(
         cmap_new, name="custom_terrain1", N=cmap_new.shape[0]
     )
     return cmap_new, cbar_levels
-
 
 
 def plot_shakemaps():
@@ -61,7 +60,7 @@ def plot_shakemaps():
     step = 1
 
     cmaps = ["OrRd", "YlOrRd", "Spectral_r", "turbo"]
-    labels=["PGD (m)", "PGV (m/s)", "PGA (m/s$^2$)", "Altitude (m)"]
+    labels = ["PGD (m)", "PGV (m/s)", "PGA (m/s$^2$)", "Altitude (m)"]
 
     sx = seissolxdmf.seissolxdmf(filename)
     variables = sx.ReadAvailableDataFields()
@@ -126,20 +125,26 @@ def plot_shakemaps():
     try:
         cmap_topo, cbar_levels_topo = custom_terrain_cmap(z)
         tri = ax[1, 1].tricontourf(
-            x[::step], y[::step], z[::step], cmap=cmap_topo, extend="both", levels=cbar_levels_topo
+            x[::step],
+            y[::step],
+            z[::step],
+            cmap=cmap_topo,
+            extend="both",
+            levels=cbar_levels_topo,
         )
-   
+
     except:
-        print("Custom terrain colormap did not work, falling back to the standard colormap.") 
+        print(
+            "Custom terrain colormap did not work, falling back to the standard colormap."
+        )
         tri = ax[1, 1].tricontourf(
             x[::step], y[::step], z[::step], cmap="terrain", extend="both"
         )
-        
+
     cbar = plt.colorbar(tri, ax=ax[1, 1])
-        
 
     for i in np.ndenumerate(ax):
-        ax[i[0]].set_title(labels[i[0][0]*2+i[0][1]], pad=4)
+        ax[i[0]].set_title(labels[i[0][0] * 2 + i[0][1]], pad=4)
         ax[i[0]].set_ylim(ylim[0], ylim[1])
         ax[i[0]].set_xlim(xlim[0], xlim[1])
         ax[i[0]].set_aspect("equal", adjustable="box")
