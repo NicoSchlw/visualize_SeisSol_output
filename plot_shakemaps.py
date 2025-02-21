@@ -67,6 +67,7 @@ def plot_shakemaps():
 
     # list containing the 3 fields that will be plotted
     data = [sx.ReadData("PGD"), sx.ReadData("PGV"), sx.ReadData("PGA")]
+    data = [np.squeeze(data[i]) for i in range(len(data))]
 
     # hardcoded values covering the relevant range of seismic hazard assessment
     minor_ticks = np.unique(
