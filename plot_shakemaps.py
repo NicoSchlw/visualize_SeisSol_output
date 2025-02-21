@@ -35,13 +35,22 @@ def get_cbar_level(data, major_ticks):
     return np.geomspace(min_value, max_value, 14)
 
 
-def custom_terrain_cmap():
-    cmap_new = mpl.cm.terrain(np.arange(256))
-    cmap_new = cmap_new[60:230]
+def custom_terrain_cmap(z):
+    min_value = np.round(np.max((np.min(z), -800)), -2)
+    max_value = np.round((np.min((np.max(z), 4500))), -2)
+    step_size = np.round((max_value - min_value) / 13, -2)
+    cbar_levels = np.arange(min_value, max_value, step_size)
+    if cbar_levels[0]<0.:
+        cbar_levels -= cbar_levels[np.argmin(np.abs(cbar_levels))]
+    cmap_min_index=np.max((50+int(cbar_levels[0]/20), 10))
+    #cmap_max_index=np.min((50+int(cbar_levels[-1]/23), 240))
+    cmap_max_index=np.min((50+int(180*np.sqrt(cbar_levels[-1]/4500)), 230))
+    cmap_new = mpl.cm.terrain(np.arange(256))[cmap_min_index:cmap_max_index]
     cmap_new = mpl.colors.ListedColormap(
         cmap_new, name="custom_terrain1", N=cmap_new.shape[0]
     )
-    return cmap_new
+    return cmap_new, cbar_levels
+
 
 
 def plot_shakemaps():
@@ -52,7 +61,7 @@ def plot_shakemaps():
     step = 1
 
     cmaps = ["OrRd", "YlOrRd", "Spectral_r", "turbo"]
-    cbar_labels = ["PGD [m]", "PGV [m/s]", "PGA [m/s$^2$]"]
+    labels=["PGD (m)", "PGV (m/s)", "PGA (m/s$^2$)", "Altitude (m)"]
 
     sx = seissolxdmf.seissolxdmf(filename)
     variables = sx.ReadAvailableDataFields()
@@ -63,7 +72,7 @@ def plot_shakemaps():
 
     x = xyz[:, 0] * 1e-3
     y = xyz[:, 1] * 1e-3
-    z = xyz[:, 2] * 1e-3
+    z = xyz[:, 2]
 
     # list containing the 3 fields that will be plotted
     data = [sx.ReadData("PGD"), sx.ReadData("PGV"), sx.ReadData("PGA")]
@@ -89,7 +98,7 @@ def plot_shakemaps():
         np.max(y) - (np.max(y) - np.min(y)) * 0.03,
     ]
 
-    fig, ax = plt.subplots(2, 2, figsize=(10, 7.5))
+    fig, ax = plt.subplots(2, 2, figsize=(10, 8))
 
     # plot shake maps
     for i in range(len(data)):
@@ -102,7 +111,7 @@ def plot_shakemaps():
             norm=colors.LogNorm(vmin=cbar_levels[i][0], vmax=cbar_levels[i][-1]),
             levels=cbar_levels[i],
         )
-        cbar = plt.colorbar(tri, ax=ax[int(i / 2), i % 2], label=cbar_labels[i])
+        cbar = plt.colorbar(tri, ax=ax[int(i / 2), i % 2])
 
         major_ticks_tmp = major_ticks[
             (major_ticks <= cbar_levels[i][-1]) & (major_ticks >= cbar_levels[i][0])
@@ -114,12 +123,23 @@ def plot_shakemaps():
         cbar.set_ticks(minor_ticks_tmp, minor=True)
 
     # plot topography
-    tri = ax[1, 1].tricontourf(
-        x[::step], y[::step], z[::step], cmap=custom_terrain_cmap(), extend="both"
-    )
-    cbar = plt.colorbar(tri, ax=ax[1, 1], label="Altitude [km]")
+    try:
+        cmap_topo, cbar_levels_topo = custom_terrain_cmap(z)
+        tri = ax[1, 1].tricontourf(
+            x[::step], y[::step], z[::step], cmap=cmap_topo, extend="both", levels=cbar_levels_topo
+        )
+   
+    except:
+        print("Custom terrain colormap did not work, falling back to the standard colormap.") 
+        tri = ax[1, 1].tricontourf(
+            x[::step], y[::step], z[::step], cmap="terrain", extend="both"
+        )
+        
+    cbar = plt.colorbar(tri, ax=ax[1, 1])
+        
 
     for i in np.ndenumerate(ax):
+        ax[i[0]].set_title(labels[i[0][0]*2+i[0][1]], pad=4)
         ax[i[0]].set_ylim(ylim[0], ylim[1])
         ax[i[0]].set_xlim(xlim[0], xlim[1])
         ax[i[0]].set_aspect("equal", adjustable="box")
@@ -127,8 +147,8 @@ def plot_shakemaps():
         ax[i[0]].xaxis.set_major_locator(MaxNLocator(nbins=5))
         ax[i[0]].yaxis.set_major_locator(MaxNLocator(nbins=5))
         ax[i[0]].tick_params(axis="both", labelsize=8)
-        ax[i[0]].set_xlabel("x [km]", size=8)
-        ax[i[0]].set_ylabel("y [km]", size=8)
+        ax[i[0]].set_xlabel("x (km)", size=8, labelpad=1)
+        ax[i[0]].set_ylabel("y (km)", size=8, labelpad=2)
 
     plt.savefig(
         "shakemaps.jpg",
